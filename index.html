@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formato Entrega de Mercancía – IMC Cargo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --azul:   #215E7A;
+      --azul2:  #1F2A5C;
+      --dorado: #F2A900;
+      --gris:   #F2F2F2;
+      --borde:  #B7B7B7;
+      --amarillo: #FFF6DD;
+      --verde:  #27AE60;
+      --rojo:   #E74C3C;
+      --naranja:#E67E22;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #E8EEF2; min-height: 100vh; padding: 0; }
+
+    /* NAV */
+    .topbar {
+      background: var(--azul2); color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 24px; position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .topbar .brand { display:flex; align-items:center; gap:12px; }
+    .topbar img { height:38px; }
+    .topbar h1 { font-size:15px; font-weight:700; letter-spacing:.5px; }
+    .topbar .nav-btns { display:flex; gap:8px; flex-wrap:wrap; }
+    .btn {
+      padding: 7px 14px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:hover { opacity:.87; transform:translateY(-1px); }
+    .btn:active { transform:translateY(0); }
+    .btn-dorado  { background:var(--dorado); color:#1F2A5C; }
+    .btn-verde   { background:var(--verde);  color:#fff; }
+    .btn-azul    { background:var(--azul);   color:#fff; }
+    .btn-rojo    { background:var(--rojo);   color:#fff; }
+    .btn-gris    { background:#607d8b;       color:#fff; }
+
+    /* TABS */
+    .tabs { background: var(--azul); display: flex; gap: 2px; padding: 0 24px; }
+    .tab {
+      padding: 10px 20px; color: rgba(255,255,255,.65);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border-bottom: 3px solid transparent; transition: all .15s; user-select: none;
+    }
+    .tab.active { color:#fff; border-bottom-color: var(--dorado); }
+    .tab:hover:not(.active) { color:#fff; }
+
+    /* MAIN */
+    .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+
+    /* CARDS */
+    .card {
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      overflow: hidden; margin-bottom: 20px;
+    }
+    .card-header {
+      background: var(--azul); color: #fff;
+      padding: 12px 20px; font-size: 13px; font-weight: 700;
+      letter-spacing: .4px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-body { padding: 20px; }
+
+    /* HEADER FORM */
+    .header-form {
+      display: grid; grid-template-columns: auto 1fr auto;
+      align-items: center; gap: 20px;
+      padding: 16px 20px; background: #fff;
+      border-bottom: 3px solid var(--azul);
+    }
+    .logo-imc { height:60px; }
+    .logo-imp { height:50px; }
+    .consec-box { text-align: center; }
+    .consec-code {
+      font-size: 18px; font-weight: 700; color: var(--azul2);
+      font-family: 'Courier New', monospace;
+      background: var(--gris); padding: 6px 18px;
+      border-radius: 6px; display: inline-block; border: 2px solid var(--azul);
+    }
+    .consec-label { font-size:11px; color:#888; margin-bottom:4px; }
+
+    /* GRIDS */
+    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    .field { display:flex; flex-direction:column; gap:4px; }
+    .field label { font-size:11px; font-weight:700; color:var(--azul2); text-transform:uppercase; letter-spacing:.4px; }
+    .field input, .field select, .field textarea {
+      border: 1.5px solid #cdd5db; border-radius: 6px;
+      padding: 8px 10px; font-size:13px; font-family: Arial;
+      background: #fff; transition: border-color .15s; width:100%;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--azul);
+      box-shadow: 0 0 0 3px rgba(33,94,122,.12);
+    }
+
+    /* TIPO MOVIMIENTO */
+    .tipo-box { display:flex; gap:12px; }
+    .tipo-opt {
+      flex:1; border:2px solid #cdd5db; border-radius:8px;
+      padding:12px 16px; cursor:pointer; transition:all .15s;
+      display:flex; align-items:center; gap:10px;
+      font-size:13px; font-weight:600; color:#555;
+    }
+    .tipo-opt.selected { border-color: var(--azul); background: rgba(33,94,122,.07); color: var(--azul2); }
+    .tipo-opt .dot {
+      width:18px; height:18px; border-radius:50%;
+      border:2px solid #cdd5db; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; transition:all .15s;
+    }
+    .tipo-opt.selected .dot { background:var(--azul); border-color:var(--azul); }
+    .tipo-opt.selected .dot::after { content:''; width:8px; height:8px; background:#fff; border-radius:50%; display:block; }
+
+    /* TABLA DETALLE */
+    .tabla-wrap { overflow-x:auto; }
+    table.detalle { width:100%; border-collapse:collapse; font-size:13px; }
+    table.detalle th {
+      background: var(--azul2); color: #fff;
+      padding: 10px 8px; text-align:center; font-size:12px; white-space:nowrap;
+    }
+    table.detalle td { border:1px solid #dde2e6; padding: 2px; }
+    table.detalle tr:nth-child(even) td { background:#f8fafc; }
+    table.detalle tr:hover td { background: rgba(33,94,122,.05); }
+    table.detalle input {
+      border:none; background:transparent; padding:7px 8px;
+      width:100%; font-size:13px; font-family:Arial; text-align:center;
+    }
+    table.detalle input:focus { outline:none; background:rgba(33,94,122,.06); }
+    table.detalle input.left { text-align:left; }
+    table.detalle .td-num { width:38px; text-align:center; color:#888; font-size:12px; padding:0 6px; }
+    table.detalle .td-del { width:34px; text-align:center; }
+    table.detalle .btn-del {
+      background:none; border:none; cursor:pointer;
+      color:#ccc; font-size:16px; line-height:1;
+      padding:4px 6px; border-radius:4px; transition:color .15s;
+    }
+    table.detalle .btn-del:hover { color:var(--rojo); }
+    .tfoot-row td { background: var(--dorado) !important; font-weight:700; color:var(--azul2); padding:8px; text-align:center; }
+    .btn-add-row {
+      margin-top:10px; background:none; border:2px dashed var(--borde);
+      width:100%; padding:8px; border-radius:6px;
+      color:#999; font-size:13px; cursor:pointer; transition:all .15s;
+    }
+    .btn-add-row:hover { border-color:var(--azul); color:var(--azul); background:rgba(33,94,122,.04); }
+
+    /* VERIFICACIONES */
+    .checks-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .check-item {
+      display:flex; align-items:center; gap:8px;
+      background:var(--gris); border-radius:8px; padding:10px 14px;
+      cursor:pointer; user-select:none; flex:1; min-width:180px;
+      border:2px solid transparent; transition:all .15s;
+    }
+    .check-item.si { border-color:var(--verde); background:rgba(39,174,96,.08); }
+    .check-item.no { border-color:var(--rojo); background:rgba(231,76,60,.08); }
+    .check-box {
+      width:20px; height:20px; border-radius:4px; border:2px solid #ccc;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; flex-shrink:0; transition:all .15s;
+    }
+    .check-item.si .check-box { background:var(--verde); border-color:var(--verde); color:#fff; }
+    .check-item.no .check-box { background:var(--rojo); border-color:var(--rojo); color:#fff; }
+    .check-label { font-size:13px; font-weight:600; color:#444; }
+    .check-badge { margin-left:auto; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; background:#fff; }
+    .check-item.si .check-badge { color:var(--verde); }
+    .check-item.no .check-badge { color:var(--rojo); }
+
+    /* FIRMAS */
+    .firma-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; }
+    .firma-col h3 { font-size:13px; font-weight:700; color:var(--azul); margin-bottom:14px; padding-bottom:6px; border-bottom:2px solid var(--azul); }
+    .firma-canvas-wrap {
+      border:1.5px solid #cdd5db; border-radius:6px;
+      background:#fafafa; position:relative; overflow:hidden; margin-bottom:8px;
+    }
+    .firma-canvas { width:100%; height:120px; display:block; cursor:crosshair; touch-action:none; }
+    .btn-clear-firma {
+      background:none; border:1px solid #cdd5db; border-radius:4px;
+      font-size:11px; padding:3px 10px; cursor:pointer; color:#888;
+    }
+    .btn-clear-firma:hover { color:var(--rojo); border-color:var(--rojo); }
+
+    /* HISTORIAL */
+    .hist-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+    .hist-card {
+      background:#fff; border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,.07);
+      border-left:4px solid var(--azul);
+      padding:14px 16px; cursor:pointer; transition:box-shadow .15s;
+    }
+    .hist-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.13); }
+    .hist-card .consec { font-size:15px; font-weight:700; color:var(--azul2); }
+    .hist-card .fecha { font-size:12px; color:#888; margin-bottom:8px; }
+    .hist-card .meta { display:flex; gap:10px; flex-wrap:wrap; }
+    .badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:10px; background:var(--gris); color:#555; }
+    .badge.tipo-imc { background:rgba(33,94,122,.12); color:var(--azul2); }
+    .badge.tipo-imp { background:rgba(242,169,0,.15); color:#7a5000; }
+    .hist-empty { text-align:center; color:#aaa; padding:40px; font-size:14px; }
+
+    /* TOAST */
+    .toast {
+      position:fixed; bottom:24px; right:24px;
+      background:var(--azul2); color:#fff;
+      padding:12px 20px; border-radius:8px;
+      font-size:13px; font-weight:600;
+      box-shadow:0 4px 16px rgba(0,0,0,.25);
+      z-index:999; opacity:0; transform:translateY(10px);
+      transition:all .25s; pointer-events:none; max-width:320px;
+    }
+    .toast.show { opacity:1; transform:translateY(0); }
+    .toast.success { background:var(--verde); }
+    .toast.error   { background:var(--rojo); }
+
+    /* MODAL */
+    .modal-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.55); z-index:200;
+      align-items:center; justify-content:center;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:#fff; border-radius:12px;
+      max-width:500px; width:94%; padding:28px;
+      box-shadow:0 8px 40px rgba(0,0,0,.3);
+      text-align:center;
+    }
+    .modal h2 { font-size:18px; color:var(--azul2); margin-bottom:15px; }
+    .modal p { font-size:14px; color:#666; margin-bottom:25px; }
+    .modal-btns { display:flex; gap:10px; justify-content:center; }
+
+    @media(max-width:700px){
+      .grid3,.firma-grid { grid-template-columns:1fr; }
+      .header-form { grid-template-columns:1fr; }
+      .topbar .nav-btns { gap:5px; }
+      .btn { padding:6px 10px; font-size:12px; }
+      .main { padding:12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <img class="logo-imc" src="logo-imc.png" alt="IMC Cargo" onerror="this.style.display='none'">
+      <img class="logo-imp" src="logo-imp.png" alt="SERVICIOS" onerror="this.style.display='none'">
+      <div>
+        <h1>FORMATO DE ENTREGA DE MERCANCÍA</h1>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);">IMC Cargo International SAS</div>
+      </div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-gris"   onclick="limpiarFormulario(true)">🗑 Limpiar</button>
+      <button class="btn btn-dorado" onclick="exportarExcel()">📊 Excel</button>
+      <button class="btn btn-azul"   onclick="window.print()">🖨️ Imprimir Web</button>
+      <button class="btn btn-verde"  onclick="guardarFormato()">💾 Guardar y Generar PDF</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('form', this)">📝 Formulario</div>
+    <div class="tab" onclick="showTab('historial', this)">📁 Archivos Drive</div>
+  </div>
+
+  <div class="main">
+    <!-- PANEL FORMULARIO -->
+    <div id="panel-form" class="panel active">
+      <div class="card">
+        <div class="header-form">
+          <img class="logo-imc" src="logo-imc.png" alt="Logo IMC" onerror="this.style.display='none'">
+          <div style="text-align:center;">
+            <div style="font-weight:800; color:var(--azul2); font-size:18px;">IMC CARGO INTERNATIONAL SAS</div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">NIT: 901.365.234-1 | Tel: +57 (1) 744 3440</div>
+          </div>
+          <div class="consec-box">
+            <div class="consec-label">CONSECUTIVO</div>
+            <div class="consec-code" id="consec-display">IMC-000000-001</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="grid3">
+            <div class="field"><label>Fecha</label><input type="date" id="fecha"></div>
+            <div class="field"><label>Hora</label><input type="time" id="hora"></div>
+            <div class="field"><label>N° Secuencial</label><input type="number" id="num-sec" value="1" oninput="actualizarConsec()"></div>
+          </div>
+          <div style="margin:20px 0 10px;"><label style="font-size:11px;font-weight:700;color:var(--azul2);text-transform:uppercase;">Tipo de Movimiento</label></div>
+          <div class="tipo-box">
+            <div class="tipo-opt selected" id="tipo-1" onclick="selTipo(1)"><div class="dot"></div> IMC → SERVICIOS</div>
+            <div class="tipo-opt" id="tipo-2" onclick="selTipo(2)"><div class="dot"></div> SERVICIOS → IMC</div>
+          </div>
+          <div class="grid3" style="margin-top:20px;">
+            <div class="field"><label>Responsable IMC</label><input type="text" id="resp-imc" placeholder="Nombre completo"></div>
+            <div class="field"><label>Responsable SERVICIOS</label><input type="text" id="resp-imp" placeholder="Nombre completo"></div>
+            <div class="field"><label>Área Solicitante</label><input type="text" id="area" placeholder="Ej: Operaciones"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">📦 Detalle de la Mercancía <span id="resumen-items" style="margin-left:auto;font-weight:400;opacity:.8;">0 ítems</span></div>
+        <div class="card-body">
+          <div class="tabla-wrap">
+            <table class="detalle">
+              <thead>
+                <tr>
+                  <th class="td-num">#</th>
+                  <th>Referencia</th>
+                  <th>Descripción</th>
+                  <th style="width:80px;">Cant.</th>
+                  <th>Serial / Serie</th>
+                  <th class="td-del"></th>
+                </tr>
+              </thead>
+              <tbody id="tbl-body"></tbody>
+              <tfoot>
+                <tr class="tfoot-row">
+                  <td colspan="3" style="text-align:right;padding-right:15px;">TOTAL UNIDADES:</td>
+                  <td id="total-cant">0</td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <button class="btn-add-row" onclick="addRow()">+ Agregar nueva fila</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">✅ Verificaciones y Observaciones</div>
+        <div class="card-body">
+          <div class="checks-row">
+            <div class="check-item si" id="chk-cant" onclick="toggleChk('chk-cant')">
+              <div class="check-box">✓</div>
+              <div class="check-label">Verifica Cantidad</div>
+              <div class="check-badge">SÍ</div>
+            </div>
+            <div class="check-item si" id="chk-ser" onclick="toggleChk('chk-ser')">
+              <div class="check-box">✓</div>
+              <div class="check-label">Valida Seriales</div>
+              <div class="check-badge">SÍ</div>
+            </div>
+            <div class="check-item si" id="chk-foto" onclick="toggleChk('chk-foto')">
+              <div class="check-box">✓</div>
+              <div class="check-label">Evidencia Fotográfica</div>
+              <div class="check-badge">SÍ</div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:20px;">
+            <label>Observaciones Adicionales</label>
+            <textarea id="obs" rows="3" placeholder="Detalles sobre el estado, empaque, etc."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">✍️ Firmas de Responsabilidad</div>
+        <div class="card-body">
+          <div class="firma-grid">
+            <div class="firma-col">
+              <h3>ENTREGA (IMC)</h3>
+              <div class="firma-canvas-wrap"><canvas class="firma-canvas" id="canvas-imc-ent"></canvas></div>
+              <button class="btn-clear-firma" onclick="clearFirma('imc-ent')">✕ Limpiar</button>
+              <div class="field" style="margin-top:10px;"><label>Nombre</label><input type="text" id="firma-imc-ent-nombre"></div>
+            </div>
+            <div class="firma-col">
+              <h3>RECIBE (SERVICIOS)</h3>
+              <div class="firma-canvas-wrap"><canvas class="firma-canvas" id="canvas-imc-rec"></canvas></div>
+              <button class="btn-clear-firma" onclick="clearFirma('imc-rec')">✕ Limpiar</button>
+              <div class="field" style="margin-top:10px;"><label>Nombre</label><input type="text" id="firma-imc-rec-nombre"></div>
+            </div>
+          </div>
+          <div class="firma-grid" style="margin-top:30px;">
+            <div class="firma-col">
+              <h3>ENTREGA (SERVICIOS)</h3>
+              <div class="firma-canvas-wrap"><canvas class="firma-canvas" id="canvas-ser-ent"></canvas></div>
+              <button class="btn-clear-firma" onclick="clearFirma('ser-ent')">✕ Limpiar</button>
+              <div class="field" style="margin-top:10px;"><label>Nombre</label><input type="text" id="firma-ser-ent-nombre"></div>
+            </div>
+            <div class="firma-col">
+              <h3>RECIBE (IMC)</h3>
+              <div class="firma-canvas-wrap"><canvas class="firma-canvas" id="canvas-ser-rec"></canvas></div>
+              <button class="btn-clear-firma" onclick="clearFirma('ser-rec')">✕ Limpiar</button>
+              <div class="field" style="margin-top:10px;"><label>Nombre</label><input type="text" id="firma-ser-rec-nombre"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL HISTORIAL -->
+    <div id="panel-historial" class="panel">
+      <div class="card">
+        <div class="card-header">
+          📁 Archivos PDF en Google Drive
+          <span style="margin-left:auto; display:flex; gap:10px;">
+            <button class="btn btn-dorado" onclick="sincronizarDrive()" style="padding:4px 10px; font-size:11px;">🔄 Sincronizar</button>
+            <input type="text" id="search-hist" placeholder="Buscar PDF..." oninput="renderHistorialDrive()" 
+              style="padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;background:rgba(255,255,255,.15);color:#fff;font-size:12px;width:150px;">
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="hist-grid" id="hist-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE OPCIONES -->
+  <div class="modal-overlay" id="modal-opciones" onclick="cerrarModal(event)">
+    <div class="modal">
+      <h2 id="modal-title">Opciones del Formato</h2>
+      <p id="modal-desc">¿Qué deseas hacer con este documento?</p>
+      <div class="modal-btns">
+        <button class="btn btn-azul" id="btn-ver-pdf">📄 Ver PDF</button>
+        <button class="btn btn-verde" id="btn-editar-form">✏️ Editar Datos</button>
+        <button class="btn btn-gris" onclick="cerrarModalDirecto()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUmmop6lepR6shdDrTVcXCLsO6krXt00abirCE0lbtiyyatul8oCgmmS5KwQcSgxhv4g/exec";
+    const STORAGE_KEY = 'imc_formatos_v3';
+
+    let tipoSel = 1;
+    let rowCount = 0;
+    const FIRMA_IDS = ['imc-ent', 'imc-rec', 'ser-ent', 'ser-rec'];
+    let firmasData = {};
+    let drawing = {};
+    let archivosDrive = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const hoy = new Date();
+      document.getElementById('fecha').value = hoy.toISOString().slice(0,10);
+      document.getElementById('hora').value = hoy.toTimeString().slice(0,5);
+      const ultimoSec = localStorage.getItem('imc_ultimo_sec');
+      if (ultimoSec) document.getElementById('num-sec').value = ultimoSec;
+      actualizarConsec();
+      for (let i = 0; i < 5; i++) addRow();
+      initFirmas();
+    });
+
+    function showTab(id, el) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('panel-' + id).classList.add('active');
+      el.classList.add('active');
+      if (id === 'historial') sincronizarDrive();
+    }
+
+    async function sincronizarDrive() {
+      toast('⏳ Sincronizando con Drive...', 'info');
+      try {
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        if (data.ok) {
+          archivosDrive = data.archivos;
+          renderHistorialDrive();
+          toast('✅ Sincronizado', 'success');
+        }
+      } catch (e) { toast('❌ Error de conexión', 'error'); }
+    }
+
+    function renderHistorialDrive() {
+      const q = (document.getElementById('search-hist')?.value || '').toLowerCase();
+      const grid = document.getElementById('hist-grid');
+      const filtrado = archivosDrive.filter(f => f.nombre.toLowerCase().includes(q));
+
+      if (filtrado.length === 0) {
+        grid.innerHTML = '<div class="hist-empty">📭 Sin archivos</div>';
+        return;
+      }
+
+      grid.innerHTML = filtrado.map((f, i) => `
+        <div class="hist-card" onclick="abrirOpciones(${i})">
+          <div class="consec">${f.nombre}</div>
+          <div class="fecha">${new Date(f.fecha).toLocaleString()}</div>
+          <div class="meta">
+            <span class="badge tipo-imc">📄 PDF</span>
+            <span class="badge" style="background:var(--verde); color:white;">✏️ Editable</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function abrirOpciones(idx) {
+      const f = archivosDrive[idx];
+      document.getElementById('modal-title').textContent = f.nombre;
+      document.getElementById('btn-ver-pdf').onclick = () => { window.open(f.url, '_blank'); cerrarModalDirecto(); };
+      
+      const btnEdit = document.getElementById('btn-editar-form');
+      btnEdit.style.display = 'block';
+      if (f.datos) {
+        btnEdit.onclick = () => { cargarEnFormulario(f.datos); cerrarModalDirecto(); };
+      } else {
+        btnEdit.onclick = () => { toast('📄 Este PDF no tiene datos editables', 'info'); };
+      }
+      
+      document.getElementById('modal-opciones').classList.add('open');
+    }
+
+    function cargarEnFormulario(d) {
+      document.getElementById('num-sec').value = d.numSec;
+      actualizarConsec();
+      document.getElementById('fecha').value = d.fecha;
+      document.getElementById('hora').value = d.hora;
+      document.getElementById('resp-imc').value = d.respIMC;
+      document.getElementById('resp-imp').value = d.respIMP;
+      document.getElementById('area').value = d.area;
+      document.getElementById('obs').value = d.obs;
+      selTipo(d.tipo.includes('IMC →') ? 1 : 2);
+
+      if (d.chkCant) setChk('chk-cant', d.chkCant === 'SÍ');
+      if (d.chkSer)  setChk('chk-ser',  d.chkSer  === 'SÍ');
+      if (d.chkFoto) setChk('chk-foto', d.chkFoto === 'SÍ');
+
+      document.querySelectorAll('#tbl-body tr').forEach(tr => tr.remove());
+      rowCount = 0;
+      d.items.forEach(it => {
+        addRow();
+        const last = document.querySelector('#tbl-body tr:last-child');
+        last.querySelector('.ref').value = it.ref;
+        last.querySelector('.desc').value = it.desc;
+        last.querySelector('.cant').value = it.cant;
+        last.querySelector('.serial').value = it.serial;
+      });
+      recalc();
+
+      cargarFirmas(d.firmas);
+
+      showTab('form', document.querySelectorAll('.tab')[0]);
+      toast('📋 Datos cargados en el formulario', 'success');
+    }
+
+    function setChk(id, esSi) {
+      const el = document.getElementById(id);
+      el.classList.toggle('si', esSi);
+      el.classList.toggle('no', !esSi);
+      el.querySelector('.check-box').textContent = esSi ? '✓' : '✗';
+      el.querySelector('.check-badge').textContent = esSi ? 'SÍ' : 'NO';
+    }
+
+    function cargarFirmas(firmas) {
+      if (!firmas) return;
+      FIRMA_IDS.forEach(id => {
+        const f = firmas[id];
+        const nombreInput = document.getElementById('firma-' + id + '-nombre');
+        if (nombreInput) nombreInput.value = (f && f.nombre) ? f.nombre : '';
+
+        if (f && f.img) {
+          dibujarFirmaEnCanvas(id, f.img);
+        } else {
+          clearFirma(id);
+        }
+      });
+    }
+
+    function dibujarFirmaEnCanvas(id, dataUrl) {
+      const canvas = document.getElementById('canvas-' + id);
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        // canvas.width/height ya están escalados por devicePixelRatio en initFirmas()
+        const ratio = window.devicePixelRatio || 1;
+        const cssW = canvas.width / ratio;
+        const cssH = canvas.height / ratio;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, cssW, cssH);
+        firmasData[id] = dataUrl;
+      };
+      img.src = dataUrl;
+    }
+
+    function actualizarConsec() {
+      const n = parseInt(document.getElementById('num-sec').value) || 1;
+      const hoy = new Date();
+      const d = String(hoy.getDate()).padStart(2,'0');
+      const m = String(hoy.getMonth()+1).padStart(2,'0');
+      const y = hoy.getFullYear();
+      document.getElementById('consec-display').textContent = `IMC-${d}${m}${y}-${String(n).padStart(3,'0')}`;
+    }
+
+    function selTipo(n) {
+      tipoSel = n;
+      document.getElementById('tipo-1').classList.toggle('selected', n === 1);
+      document.getElementById('tipo-2').classList.toggle('selected', n === 2);
+    }
+
+    function addRow() {
+      rowCount++;
+      const tbody = document.getElementById('tbl-body');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-num">${rowCount}</td>
+        <td><input type="text" class="ref" placeholder="REF"></td>
+        <td><input type="text" class="left desc" placeholder="Descripción"></td>
+        <td><input type="number" class="cant" min="0" value="0" oninput="recalc()"></td>
+        <td><input type="text" class="left serial" placeholder="Serial"></td>
+        <td class="td-del"><button class="btn-del" onclick="delRow(this)">×</button></td>
+      `;
+      tbody.appendChild(tr);
+      recalc();
+    }
+
+    function delRow(btn) { btn.closest('tr').remove(); renumRows(); recalc(); }
+    function renumRows() { document.querySelectorAll('#tbl-body tr').forEach((tr, i) => { tr.querySelector('.td-num').textContent = i + 1; }); }
+    function recalc() {
+      let total = 0, items = 0;
+      document.querySelectorAll('#tbl-body tr').forEach(tr => {
+        const v = parseFloat(tr.querySelector('.cant').value) || 0;
+        if (tr.querySelector('.ref').value || v > 0) items++;
+        total += v;
+      });
+      document.getElementById('total-cant').textContent = total;
+      document.getElementById('resumen-items').textContent = `${items} ítems`;
+    }
+
+    function toggleChk(id) {
+      const el = document.getElementById(id);
+      const esSi = el.classList.contains('si');
+      el.classList.toggle('si', !esSi); el.classList.toggle('no', esSi);
+      el.querySelector('.check-box').textContent = esSi ? '✗' : '✓';
+      el.querySelector('.check-badge').textContent = esSi ? 'NO' : 'SÍ';
+    }
+
+    function initFirmas() {
+      FIRMA_IDS.forEach(id => {
+        const canvas = document.getElementById('canvas-' + id);
+        const ctx = canvas.getContext('2d');
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+        ctx.strokeStyle = '#1F2A5C'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+        const getPos = (e) => {
+          const r = canvas.getBoundingClientRect();
+          const src = e.touches ? e.touches[0] : e;
+          return { x: src.clientX - r.left, y: src.clientY - r.top };
+        };
+        const start = (e) => { drawing[id] = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+        const move = (e) => { if (!drawing[id]) return; if (e.touches) e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+        const stop = () => { if (drawing[id]) { drawing[id] = false; firmasData[id] = canvas.toDataURL('image/png'); } };
+        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move);
+        canvas.addEventListener('mouseup', stop); canvas.addEventListener('touchstart', start);
+        canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
+      });
+    }
+
+    function clearFirma(id) {
+      const canvas = document.getElementById('canvas-' + id);
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      firmasData[id] = null;
+    }
+
+    async function guardarFormato() {
+      const items = [];
+      document.querySelectorAll('#tbl-body tr').forEach(tr => {
+        const ref = tr.querySelector('.ref').value;
+        const desc = tr.querySelector('.desc').value;
+        const cant = parseFloat(tr.querySelector('.cant').value) || 0;
+        const serial = tr.querySelector('.serial').value;
+        if (ref || desc || cant > 0) items.push({ ref, desc, cant, serial });
+      });
+      if (items.length === 0) { toast('Agregue ítems', 'error'); return; }
+
+      const data = {
+        consecutivo: document.getElementById('consec-display').textContent,
+        numSec: document.getElementById('num-sec').value,
+        fecha: document.getElementById('fecha').value,
+        hora: document.getElementById('hora').value,
+        tipo: tipoSel === 1 ? 'IMC → SERVICIOS' : 'SERVICIOS → IMC',
+        respIMC: document.getElementById('resp-imc').value,
+        respIMP: document.getElementById('resp-imp').value,
+        area: document.getElementById('area').value,
+        items: items,
+        totalCant: document.getElementById('total-cant').textContent,
+        chkCant: document.getElementById('chk-cant').querySelector('.check-badge').textContent,
+        chkSer: document.getElementById('chk-ser').querySelector('.check-badge').textContent,
+        chkFoto: document.getElementById('chk-foto').querySelector('.check-badge').textContent,
+        obs: document.getElementById('obs').value,
+        firmas: {
+          'imc-ent': { img: firmasData['imc-ent'], nombre: document.getElementById('firma-imc-ent-nombre').value },
+          'imc-rec': { img: firmasData['imc-rec'], nombre: document.getElementById('firma-imc-rec-nombre').value },
+          'ser-ent': { img: firmasData['ser-ent'], nombre: document.getElementById('firma-ser-ent-nombre').value },
+          'ser-rec': { img: firmasData['ser-rec'], nombre: document.getElementById('firma-ser-rec-nombre').value }
+        }
+      };
+
+      toast('⏳ Guardando en Drive...', 'info');
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        toast('✅ Guardado exitoso', 'success');
+      } catch (e) { toast('❌ Error al guardar', 'error'); }
+
+      const nInput = document.getElementById('num-sec');
+      nInput.value = parseInt(nInput.value) + 1;
+      localStorage.setItem('imc_ultimo_sec', nInput.value);
+      actualizarConsec();
+    }
+
+    function cerrarModal(e) { if (e.target.id === 'modal-opciones') cerrarModalDirecto(); }
+    function cerrarModalDirecto() { document.getElementById('modal-opciones').classList.remove('open'); }
+    function toast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast show ${type}`;
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+    function limpiarFormulario(confirmar) {
+      if (confirmar && !confirm('¿Limpiar?')) return;
+      location.reload();
+    }
+    function exportarExcel() { toast('Función disponible en versión local', 'info'); }
+  </script>
+</body>
+</html>
