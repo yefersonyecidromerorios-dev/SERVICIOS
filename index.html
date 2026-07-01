@@ -4,11 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Formato Entrega de Mercancía – IMC Cargo</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1F2A5C">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1F2A5C">
-    
     :root {
       --azul:   #215E7A;
       --azul2:  #1F2A5C;
@@ -730,5 +731,14 @@
     }
     function exportarExcel() { toast('Función disponible en versión local', 'info'); }
   </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('Service Worker registrado:', reg.scope))
+        .catch(err => console.log('Error al registrar Service Worker:', err));
+    });
+  }
+</script>
 </body>
 </html>
